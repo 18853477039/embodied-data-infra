@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "embodied-data-infra"
+dynamic = ["version"]
+description = "End-to-end data infrastructure for LeRobot manipulation datasets: collect, clean, convert, train."
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["robotics", "lerobot", "data-quality", "imitation-learning", "reinforcement-learning"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "av>=12",
+    "huggingface_hub>=0.20",
+    "lerobot>=0.7.1,<0.8",
+    "numpy>=1.26",
+    "polars>=1.0",
+    "pyarrow>=15",
+    "PyYAML>=6",
+]
+
+[project.optional-dependencies]
+collect = ["pygame>=2.5"]
+dev = [
+    "pre-commit>=3.7",
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.17,<0.18",
+]
+
+[project.scripts]
+embodied = "embodied_data_infra.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "embodied_data_infra.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.coverage.run]
+source = ["embodied_data_infra"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

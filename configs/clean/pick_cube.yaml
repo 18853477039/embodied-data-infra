@@ -1,0 +1,55 @@
+source:
+  repo_id: lilkm/pick_cube_franka_panda_30
+  revision: main
+  # The 30 episodes recorded in this session live in LeRobot's local cache.
+  # configs/collect/gym_hil_pick_cube.json has push_to_hub: false, and the Hub
+  # repo is an older snapshot (458 frames, 2026-05-09). Set local_root to null
+  # to clean the published Hub snapshot instead.
+  local_root: ~/.cache/huggingface/lerobot/lilkm/pick_cube_franka_panda_30
+  download_dir: data/raw
+  hash_videos: true
+
+cleaning:
+  fps_tolerance_s: 1.0e-3
+  fail_on_nan: true
+  min_frames: 5
+  max_frames: 150          # env control_time_s=15s x 10fps
+  duration_outlier_factor: 3.0
+  clip_crf: 18             # stage-1 clips are near-lossless; conversion re-encodes canonically
+  success:
+    require: true
+    reward_key: next.reward
+    done_key: next.done
+  action:
+    bounds: [[0, 0], [0, 0], [-1, 1], [0, 2]]
+    allowed_values:
+      3: [1, 2]            # gripper: 1=open, 2=close
+    atol: 1.0e-5
+  idle:
+    state_motion_dims: [0, 1, 2, 3, 4, 5, 6]
+    action_translation_dims: [0, 1, 2]
+    motion_eps: 1.0e-4
+    action_eps: 1.0e-6
+    trim_leading: true
+    trim_trailing: true
+    min_trim_frames: 10   # only trim idle runs >= 1s; avoid deleting normal startup frames
+    max_trim_ratio: 0.8   # allow a long startup idle (ep0 is 22/35) as long as min_frames remain
+    interior_idle_ratio_max: 0.20
+    interior_idle_run_max: 10
+
+output:
+  clean_root: data/cleaned
+  curated_root: data/curated
+  report_root: data/reports
+  repo_id: lilkm/pick_cube_franka_panda_30_clean
+  overwrite: false
+
+conversion:
+  parallel_encoding: false
+  validate_after: true
+  video_corr_min: 0.95
+  video_mae_max: 10.0
+
+push:
+  enabled: false
+  private: true

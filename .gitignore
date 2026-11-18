@@ -1,0 +1,35 @@
+# Environments and secrets
+.venv/
+.env
+
+# Python build artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local datasets and run artefacts (contracts are documented in docs/)
+data/
+outputs/
+logs/
+wandb/
+
+# Model checkpoints
+*.pt
+*.safetensors
