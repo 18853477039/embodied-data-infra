@@ -117,27 +117,30 @@ export WANDB_MODE=offline       # 离线环境可选
 
 校验失败时不会发布新的 curated 目录；查看 `validation.json` 的 `failures` 列表定位问题。
 
-### 4.4 训练
+### 4.4 训练（HIL-SERL actor/learner）
+
+> ⚠ 当前 `embodied train` 包装的是标准 `lerobot-train`，**不适用于本项目的 SAC 配置**。
+> `configs/train/sac_gym_hil_pick_cube.json` 是 HIL-SERL 的 `TrainRLServerPipelineConfig`，
+> 需要先启动 learner、再启动 actor。修复计划见 [../TODO.md](../TODO.md)。
 
 ```bash
-# 自动选择 data/curated 下最新的有效数据集
-.venv/bin/embodied train \
-  --config configs/train/sac_gym_hil_pick_cube.json \
-  --latest-curated
+# 终端 1：learner（先启动；内部启动 gRPC 服务并加载离线 replay buffer）
+.venv/bin/python -m lerobot.rl.learner \
+  --config_path configs/train/sac_gym_hil_pick_cube.json \
+  --dataset.root data/curated/<run_key>/dataset
 
-# 指定某个 run 或手动导出的数据集
-.venv/bin/embodied train \
-  --config configs/train/sac_gym_hil_pick_cube.json \
-  --dataset-root data/curated/<run_key>/dataset
-
-# 短程 smoke test（透传 LeRobot 参数）
-.venv/bin/embodied train \
-  --config configs/train/sac_gym_hil_pick_cube.json \
-  --latest-curated --output-dir outputs/train/smoke -- --steps 50
-
-# 先看命令
-.venv/bin/embodied train --config ... --latest-curated --dry-run
+# 终端 2：actor（连接 learner，在环境里在线采样）
+.venv/bin/python -m lerobot.rl.actor \
+  --config_path configs/train/sac_gym_hil_pick_cube.json \
+  --dataset.root data/curated/<run_key>/dataset
 ```
+
+说明：
+
+- learner 必须先启动；actor 依赖 `policy.actor_learner_config.learner_host/port`。
+- `--dataset.root` 指定 learner 的离线数据集；`dataset.repo_id` 仍是标识符，不会被覆盖。
+- 两个进程应使用同一份配置和同一个数据集 root。
+- 修复后的统一入口设计（`--role learner|actor|both`）见 [../TODO.md](../TODO.md)。
 
 训练产物：
 

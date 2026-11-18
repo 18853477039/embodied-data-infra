@@ -7,7 +7,7 @@
 configs/
 ├── collect/gym_hil_pick_cube.json   # lerobot-record 的输入
 ├── clean/pick_cube.yaml             # embodied clean / convert 的输入
-└── train/sac_gym_hil_pick_cube.json # lerobot-train 的输入
+└── train/sac_gym_hil_pick_cube.json # HIL-SERL actor/learner 的输入
 ```
 
 > 相对路径（`data/raw`、`data/cleaned` 等）按**当前工作目录**解析。
@@ -179,7 +179,9 @@ push:
 
 示例：`configs/train/sac_gym_hil_pick_cube.json`
 
-这是 LeRobot `TrainPipelineConfig` 的完整快照，主要字段：
+这是 HIL-SERL `TrainRLServerPipelineConfig` 的完整快照，由
+`lerobot.rl.learner` / `lerobot.rl.actor` 消费；它不是标准
+`lerobot.scripts.lerobot_train` 的 `TrainPipelineConfig`。主要字段：
 
 | 区块 | 关键字段 | 说明 |
 |---|---|---|
@@ -191,20 +193,25 @@ push:
 | `env` | `type=gym_manipulator`、`task`、`fps`、`processor` | 在线采样环境，需与采集配置一致 |
 | `wandb` | `enable` / `project` | 日志；关闭后不依赖 W&B |
 
-训练阶段支持的 CLI 覆盖：
+> ⚠ 当前 `embodied train` 仍按 `lerobot-train` 构造命令，尚未适配 HIL-SERL。
+> 目前请手动启动 learner 和 actor（先 learner 后 actor），并使用同一 `--dataset.root`；
+> 修复计划见 [../TODO.md](../TODO.md)。
 
 ```bash
-.venv/bin/embodied train \
-  --config configs/train/sac_gym_hil_pick_cube.json \
-  --latest-curated \                 # 或 --dataset-root data/curated/<key>/dataset
-  --curated-root data/curated \
-  --output-dir outputs/train/smoke \
-  --job-name smoke \
-  --resume \                         # / --no-resume
-  --dry-run
+# 终端 1：learner
+.venv/bin/python -m lerobot.rl.learner \
+  --config_path configs/train/sac_gym_hil_pick_cube.json \
+  --dataset.root data/curated/<run_key>/dataset
+
+# 终端 2：actor
+.venv/bin/python -m lerobot.rl.actor \
+  --config_path configs/train/sac_gym_hil_pick_cube.json \
+  --dataset.root data/curated/<run_key>/dataset
 ```
 
-| 参数 | 映射到 `lerobot-train` |
+P0 修复后，CLI 计划支持以下覆盖（当前尚未生效）：
+
+| 参数 | 计划映射到 `lerobot.rl.*` |
 |---|---|
 | `--dataset-root` | `--dataset.root <path>` |
 | `--repo-id` | `--dataset.repo_id <id>` |
@@ -214,4 +221,4 @@ push:
 
 `--latest-curated` 会扫描 `--curated-root` 下包含 `dataset/meta/info.json` 的 run，
 按目录 mtime 选择最新一个；它与 `--dataset-root` 互斥。
-`--` 之后的参数原样透传给 `lerobot-train`。
+修复后 `--` 之后的参数将原样透传给 `lerobot.rl.learner` / `lerobot.rl.actor`。

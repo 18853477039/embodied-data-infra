@@ -57,6 +57,9 @@ validate:
 	@test -n "$(DATASET)" || (printf "DATASET=/path/to/dataset is required\n"; exit 2)
 	$(PY) -m embodied_data_infra.cli validate --config $(CLEAN_CONFIG) --dataset $(DATASET)
 
+# NOTE: `train` currently targets lerobot-train. The shipped SAC config is a
+# HIL-SERL TrainRLServerPipelineConfig and must be run via
+# `python -m lerobot.rl.learner` + `python -m lerobot.rl.actor`. See TODO.md.
 train:
 	$(PY) -m embodied_data_infra.cli train --config $(TRAIN_CONFIG) \
 		--latest-curated --curated-root $(CURATED_ROOT)

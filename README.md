@@ -14,7 +14,7 @@
 | 清洗 | `embodied clean` | 原始 LeRobot v3 数据集 + YAML | `data/cleaned/<run_key>/` | Polars 内存清洗、切片编码、QC 报告、逐帧 selection |
 | 转换 | `embodied convert` | 清洗层 | `data/curated/<run_key>/dataset/` | 官方 LeRobot writer 重建标准数据集，自动回读校验 |
 | 校验 | `embodied validate` | 已转换数据集 | `validation.json` | 独立重跑契约检查与回读比对 |
-| 训练 | `embodied train` | 训练 JSON + curated 数据集 | `outputs/train/<date>/<time>_<job>/` | 包装 `lerobot-train`，一键选用最新 curated 数据集 |
+| 训练 | `embodied train` ⚠ 待适配 | 训练 JSON + curated 数据集 | `outputs/train/...` | 当前包装 `lerobot-train`；示例 SAC 配置实际是 HIL-SERL `TrainRLServerPipelineConfig`，需要 `lerobot.rl.learner` + `lerobot.rl.actor`，见 [TODO.md](TODO.md) |
 
 > 当前示例任务：Franka Panda `PandaPickCubeGamepad-v0`，10 fps，双相机 128×128，
 > 30 episodes 本地录制。详细清洗结论见 [docs/pipeline.md](docs/pipeline.md)。
@@ -38,7 +38,7 @@
                                     │  curated dataset     │  canonical LeRobot v3
                                     │  data/curated/<key>  │  stats / metadata
                                     └────────┬─────────────┘
-                                             │ embodied train
+                                             │ embodied train（⚠ 待适配）
                                              ▼
                                     ┌──────────────────────┐
                                     │  outputs/train/...   │  checkpoints + logs
@@ -57,7 +57,7 @@ embodied-data-infra/
 │   ├── cli.py                     # 统一 CLI：collect / clean / convert / validate / train
 │   ├── collection/runner.py       # 采集阶段：配置校验 + lerobot-record 启动
 │   ├── cleaning/                  # 清洗阶段：加载、规则、切片、报告、转换、校验
-│   └── training/runner.py         # 训练阶段：配置校验 + lerobot-train 启动
+│   └── training/runner.py         # 训练阶段：配置校验 + 训练入口启动（⚠ 待适配 HIL-SERL）
 ├── scripts/check_gamepad.py       # 录制前的手柄自检脚本
 ├── tests/
 │   ├── unit/                      # 规则、配置、阶段包装器
@@ -94,19 +94,37 @@ uv pip install -e ".[dev]" --python .venv/bin/python
 # 5) 转换 + 自动回读校验
 .venv/bin/embodied convert --config configs/clean/pick_cube.yaml
 
-# 6) 训练：自动选择 data/curated 下最新的数据集
-.venv/bin/embodied train \
-  --config configs/train/sac_gym_hil_pick_cube.json \
-  --latest-curated
+# 6) 训练（⚠ 当前 wrapper 尚未适配 HIL-SERL，需手动双进程）
+#    先启动 learner；另开终端再启动 actor，两者使用同一配置和数据集
+.venv/bin/python -m lerobot.rl.learner \
+  --config_path configs/train/sac_gym_hil_pick_cube.json \
+  --dataset.root data/curated/<run_key>/dataset
 
-# 或者用 Makefile
+.venv/bin/python -m lerobot.rl.actor \
+  --config_path configs/train/sac_gym_hil_pick_cube.json \
+  --dataset.root data/curated/<run_key>/dataset
+
+# 或者用 Makefile（清洗 + 转换）
 make check          # lint + tests
 make pipeline       # clean + convert
-make train          # 最新 curated 数据集
+# make train 目前不可用于这份 HIL-SERL 配置，原因见 TODO.md
 ```
 
 详细命令、覆盖参数与排障见 [docs/operations.md](docs/operations.md)；
 配置字段见 [docs/configuration.md](docs/configuration.md)。
+
+## 已知问题（TODO）
+
+- **训练包装器与示例配置不匹配（P0）**：`embodied train` 当前构造的是
+  `lerobot.scripts.lerobot_train` 命令，而 `configs/train/sac_gym_hil_pick_cube.json`
+  是 HIL-SERL 的 `TrainRLServerPipelineConfig`，包含 `algorithm`、`mixer`、`online_ratio`、
+  `policy.actor_learner_config` 等字段，标准 `TrainPipelineConfig` 不识别；
+  当前命令会在配置解析阶段失败。正确流程是先 `lerobot.rl.learner`、后 `lerobot.rl.actor`，
+  详见 [TODO.md](TODO.md)。
+- **LICENSE 未指定**：发布前需由项目负责人补充许可证。
+- **尚未初始化 git**：当前目录不是 git 仓库，建议纳入版本控制后再做团队协作。
+
+完整待办、影响范围和验收标准见 [TODO.md](TODO.md)。
 
 ## 文档索引
 
@@ -116,6 +134,8 @@ make train          # 最新 curated 数据集
 | [docs/configuration.md](docs/configuration.md) | 采集/清洗/训练三类配置与 CLI 覆盖项 |
 | [docs/pipeline.md](docs/pipeline.md) | 清洗算法、真实数据结论、产物契约与回读校验 |
 | [docs/operations.md](docs/operations.md) | 环境、运行手册、HF/W&B、故障排查 |
+| [docs/experiments.md](docs/experiments.md) | 实验记录：数据、配置、结果与初步结论 |
+| [TODO.md](TODO.md) | 已知问题、修复计划与验收标准 |
 
 ## 质量保障
 

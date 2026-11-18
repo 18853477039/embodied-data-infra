@@ -41,7 +41,7 @@
 | clean | `cleaning.cleaning.run_clean` | 原始数据集 + YAML | 清洗层 + QC | 只写 `data/cleaned`、`data/reports` |
 | convert | `cleaning.conversion.run_convert` | 清洗层 + YAML | canonical 数据集 | 只写 `data/curated`，校验通过后发布 |
 | validate | `cleaning.validation` | curated 数据集 | `validation.json` | 只读数据集，写校验结果 |
-| train | `training.runner.run_train` | 训练 JSON + curated | checkpoints/logs | 调用 `lerobot-train`，写 `outputs/` |
+| train | `training.runner.run_train` | 训练 JSON + curated | checkpoints/logs | 当前调用 `lerobot-train`（⚠ 与 HIL-SERL 配置不匹配，见 [../TODO.md](../TODO.md)），写 `outputs/` |
 
 数据流：
 
@@ -121,7 +121,7 @@ run_key = <源内容指纹前 12 位>__<配置指纹前 12 位>
 | 新机器人/新任务录制 | 新增 `configs/collect/<task>.json`，无需改代码 |
 | 新清洗规则 | `cleaning/rules.py`：帧级指标、集级聚合、判定原因，并补 `tests/unit/test_rules.py` |
 | 新输入格式 | `cleaning/source.py` + `loader.py`，保持 `SourceDataset` 契约 |
-| 新训练算法 | 新增 `configs/train/<algo>.json`，交给 `lerobot-train` |
+| 新训练算法 | 新增 `configs/train/<algo>.json`，交给对应的 LeRobot 训练入口（IL 用 `lerobot-train`，HIL-SERL 用 `lerobot.rl.learner` + `lerobot.rl.actor`） |
 | 新阶段（如评估、回放） | 在 `src/embodied_data_infra/` 增加子包，CLI 注册子命令 |
 | 云端/集群执行 | 包装器均为显式 argv，可替换为作业调度器的 command 模板 |
 

@@ -16,6 +16,7 @@
     },
     "dataset": {
         "repo_id": "lilkm/pick_cube_franka_panda_30",
+        "root": "/home/jishoukai/Projects/embodied-data-infra/data/curated/d163e86dc4aa__f3795cbc51b5/dataset",
         "use_imagenet_stats": false
     },
     "algorithm": {

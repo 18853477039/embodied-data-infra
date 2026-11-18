@@ -8,7 +8,7 @@
 1. **clean**：原始数据集 → 清洗层
    （清洗后 parquet + 每集切好的视频 + selection/manifest + QC 报告）
 2. **convert**：清洗层 → 标准 LeRobot v3 数据集
-   （重新编号、重编码视频、重算 stats/metadata，可直接 `lerobot-train`）
+   （重新编号、重编码视频、重算 stats/metadata，可被 LeRobot 训练入口直接读取；本项目为 HIL-SERL）
 
 两个命令相互独立，中间层是显式契约，可分别重跑、审计和复用。
 
